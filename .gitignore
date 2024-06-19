@@ -2,5 +2,8 @@
 *.pyc
 __pycache__/
 
-# Environment
-.env
+# Export
+product_list.html
+
+# DB
+data.json

@@ -4,7 +4,10 @@ import json
 import os
 import time
 from lxml import html
+from dotenv import load_dotenv
 from export import load_data, calculate_totals, generate_html, save_html
+
+load_dotenv()
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -16,7 +19,8 @@ def test_webpage_content(soup):
     with open(output_file, 'w', encoding='utf-8') as file:
         file.write(pretty_html)
 
-def get_exchange_rate(api_key, base_currency, target_currency):
+def get_exchange_rate(base_currency, target_currency):
+    api_key = os.getenv('EXCHANGE_RATE_API_KEY')
     url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -54,7 +58,7 @@ def parse_price(price_str):
         print("Failed to parse the SEK price")
         return None
 
-def get_ikea_product_info(url, soup, api_key):
+def get_ikea_product_info(url, soup):
     name_tag = soup.find('span', class_='pip-header-section__description-text')
     if not name_tag:
         print("Failed to retrieve product name from IKEA.")
@@ -80,7 +84,7 @@ def get_ikea_product_info(url, soup, api_key):
         print("Failed to parse the SEK price for IKEA product.")
         return None
 
-    exchange_rate = get_exchange_rate(api_key, 'SEK', 'GBP')
+    exchange_rate = get_exchange_rate('SEK', 'GBP')
     if exchange_rate is None:
         print("Failed to retrieve exchange rate for IKEA product.")
         return None
@@ -96,7 +100,7 @@ def get_ikea_product_info(url, soup, api_key):
         'picture_url': picture_url
     }
 
-def get_elgiganten_product_info(url, soup, api_key):
+def get_elgiganten_product_info(url, soup):
     name_tag = soup.find('span', class_='font-regular font-bold xl:text-4xl text-xl')
     if not name_tag:
         print("Failed to retrieve product name from Elgiganten.")
@@ -127,7 +131,7 @@ def get_elgiganten_product_info(url, soup, api_key):
         print("Failed to parse the SEK price for Elgiganten product.")
         return None
 
-    exchange_rate = get_exchange_rate(api_key, 'SEK', 'GBP')
+    exchange_rate = get_exchange_rate('SEK', 'GBP')
     if exchange_rate is None:
         print("Failed to retrieve exchange rate for Elgiganten product.")
         return None
@@ -143,7 +147,7 @@ def get_elgiganten_product_info(url, soup, api_key):
         'picture_url': picture_url
     }
 
-def get_trademax_product_info(url, soup, api_key):
+def get_trademax_product_info(url, soup):
     tree = html.fromstring(str(soup))
 
     name_xpath = '/html/body/div[1]/div/main/div[2]/div[2]/div[1]/h1'
@@ -172,7 +176,7 @@ def get_trademax_product_info(url, soup, api_key):
         print("Failed to parse the SEK price for Trademax product.")
         return None
 
-    exchange_rate = get_exchange_rate(api_key, 'SEK', 'GBP')
+    exchange_rate = get_exchange_rate('SEK', 'GBP')
     if exchange_rate is None:
         print("Failed to retrieve exchange rate for Trademax product.")
         return None
@@ -214,38 +218,43 @@ def save_product_info(product_info, category):
     
     print(f"Product information saved to {category} category in data.json")
 
-def determine_website_and_get_info(url, api_key):
+def determine_website_and_get_info(url):
     content = fetch_product_page(url)
     if not content:
         return None
     
     soup = BeautifulSoup(content, 'html.parser')
     if 'ikea.com' in url:
-        return get_ikea_product_info(url, soup, api_key)
+        return get_ikea_product_info(url, soup)
     elif 'elgiganten.se' in url:
-        return get_elgiganten_product_info(url, soup, api_key)
+        return get_elgiganten_product_info(url, soup)
     elif 'trademax.se' in url:
-        return get_trademax_product_info(url, soup, api_key)
+        return get_trademax_product_info(url, soup)
     else:
         print("Unsupported website")
         return None
 
 def main():
-    api_key = "(ADD API KEY HERE)"
+    categories = ["Kitchen", "Living Room", "Bedroom", "Bathroom", "Extra"]
     action = input("Do you want to 'export' or 'add' items? ").strip().lower()
     
     if action == 'add':
-        category = input("Please enter the category (Kitchen, Living Room, Bedroom, Bathroom, Extra): ").strip()
+        print("Please select the category:")
+        for i, category in enumerate(categories, 1):
+            print(f"{i}. {category}")
         
-        if category not in ["Kitchen", "Living Room", "Bedroom", "Bathroom", "Extra"]:
-            print("Invalid category")
+        category_index = int(input("Enter the number corresponding to the category: ").strip())
+        
+        if category_index < 1 or category_index > len(categories):
+            print("Invalid category number")
         else:
+            category = categories[category_index - 1]
             while True:
                 url = input("Please enter the product URL (or type 'exit' to stop): ").strip()
                 if url.lower() == 'exit':
                     break
                 
-                product_info = determine_website_and_get_info(url, api_key)
+                product_info = determine_website_and_get_info(url)
                 
                 if product_info:
                     save_product_info(product_info, category)

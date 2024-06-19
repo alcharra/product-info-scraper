@@ -47,7 +47,7 @@ def generate_html(data, totals):
             .item-details div { margin-bottom: 5px; }
 
             @media (max-width: 600px) {
-                .item { flex: 1 1 45%; }
+                .item { flex: 1 1 100%; }
                 .item img { width: 100%; height: auto; margin-bottom: 10px; }
                 .item-details { width: 100%; }
             }
@@ -60,6 +60,7 @@ def generate_html(data, totals):
                 <div>Total GBP: {{ "%.2f" % totals.overall.gbp_total }}</div>
             </div>
             {% for category, items in data.items() %}
+            {% if items %}
             <div class="category">
                 <h2>{{ category }}</h2>
                 <div class="category-total">Total SEK: {{ "%.2f" % totals[category].sek_total }} | Total GBP: {{ "%.2f" % totals[category].gbp_total }}</div>
@@ -77,6 +78,7 @@ def generate_html(data, totals):
                     {% endfor %}
                 </div>
             </div>
+            {% endif %}
             {% endfor %}
         </div>
     </body>

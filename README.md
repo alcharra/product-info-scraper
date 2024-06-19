@@ -21,9 +21,9 @@ This project contains two scripts (`index.py` and `export.py`) that work togethe
 - Python 3.x
 - Required Python packages (can be installed using `pip`):
 
-  ```bash
-  pip install requests beautifulsoup4 lxml jinja2
-  ```
+```bash
+pip install requests beautifulsoup4 lxml jinja2 python-dotenv
+```
 
 - An API key from ExchangeRate-API to fetch the exchange rates.
 
@@ -48,10 +48,10 @@ pip install -r requirements.txt
 
 ### 3. Add Your API Key
 
-Obtain your API key from ExchangeRate-API and paste it into the `index.py` script at the `api_key` variable assignment:
+Obtain your API key from ExchangeRate-API and create a `.env` file in the project directory with the following content:
 
-```python
-api_key = "(ADD API KEY HERE)"
+```
+EXCHANGE_RATE_API_KEY=your_api_key_here
 ```
 
 ### 4. Run the Script
@@ -67,7 +67,12 @@ You can either add product information or export the collected data into an HTML
    ```
 
 2. When prompted, choose the action `add` to add new products.
-3. Enter the category for the products (Kitchen, Living Room, Bedroom, Bathroom, Extra).
+3. Enter the number corresponding to the category for the products:
+   - 1. Kitchen
+   - 2. Living Room
+   - 3. Bedroom
+   - 4. Bathroom
+   - 5. Extra
 4. Enter the product URLs one by one. Type `exit` to stop adding products.
 
 #### Exporting Data
@@ -91,14 +96,14 @@ This script handles the user interaction, fetching, and parsing of product infor
 #### Functions
 
 - `test_webpage_content(soup)`: Saves the webpage content to `test.html` for testing purposes.
-- `get_exchange_rate(api_key, base_currency, target_currency)`: Fetches the exchange rate between two currencies.
+- `get_exchange_rate(base_currency, target_currency)`: Fetches the exchange rate between two currencies.
 - `fetch_product_page(url, retries=3, delay=5)`: Fetches the product page content with retry logic.
 - `parse_price(price_str)`: Parses the price from a string to a float.
-- `get_ikea_product_info(url, soup, api_key)`: Extracts product information from an IKEA product page.
-- `get_elgiganten_product_info(url, soup, api_key)`: Extracts product information from an Elgiganten product page.
-- `get_trademax_product_info(url, soup, api_key)`: Extracts product information from a Trademax product page.
+- `get_ikea_product_info(url, soup)`: Extracts product information from an IKEA product page.
+- `get_elgiganten_product_info(url, soup)`: Extracts product information from an Elgiganten product page.
+- `get_trademax_product_info(url, soup)`: Extracts product information from a Trademax product page.
 - `save_product_info(product_info, category)`: Saves product information to the JSON file.
-- `determine_website_and_get_info(url, api_key)`: Determines the website and fetches product information accordingly.
+- `determine_website_and_get_info(url)`: Determines the website and fetches product information accordingly.
 - `main()`: Main function to run the script.
 
 ### `export.py`
@@ -120,7 +125,13 @@ This script handles the loading of data from the JSON file, calculating totals, 
 ```bash
 $ python index.py
 Do you want to 'export' or 'add' items? add
-Please enter the category (Kitchen, Living Room, Bedroom, Bathroom, Extra): Kitchen
+Please select the category:
+1. Kitchen
+2. Living Room
+3. Bedroom
+4. Bathroom
+5. Extra
+Enter the number corresponding to the category: 1
 Please enter the product URL (or type 'exit' to stop): https://www.ikea.com/se/sv/p/product1
 Product information saved to Kitchen category in data.json
 Please enter the product URL (or type 'exit' to stop): exit
