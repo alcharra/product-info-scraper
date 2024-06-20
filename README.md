@@ -1,4 +1,3 @@
-
 # Product Info Scraper and Exporter
 
 ## Overview
@@ -38,16 +37,18 @@ Create a `config.json` file in the project directory with the following structur
 {
   "categories": ["Kitchen", "Living Room", "Bedroom", "Bathroom"],
   "convertOriginalCurrency": {
+    "enableConversion": true,
     "ExchangeFrom": "SEK",
-    "ExchangeTo": "GBP"
+    "ExchangeTo": ["GBP", "USD", "JPY"]
   }
 }
 ```
 
 - `categories`: List of product categories.
 - `convertOriginalCurrency`: Configuration for currency conversion.
+  - `enableConversion`: Boolean flag to enable or disable currency conversion.
   - `ExchangeFrom`: The original currency code.
-  - `ExchangeTo`: The target currency code.
+  - `ExchangeTo`: List of target currency codes.
 
 ## How to Use
 
@@ -91,14 +92,16 @@ python main.py
 2. When prompted, choose the action by entering the corresponding number:
    - 1. Add items
    - 2. Export items
+   - 3. Exit
 
 3. If adding items, select the category by entering the corresponding number:
    - 1. Kitchen
    - 2. Living Room
    - 3. Bedroom
    - 4. Bathroom
+   - 5. Go back to main menu
 
-4. Enter the product URLs one by one. Type `exit` to stop adding products.
+4. Enter the product URLs one by one. Type `back` to change category.
 
 #### Exporting Data
 
@@ -111,6 +114,7 @@ python main.py
 2. When prompted, choose the action by entering the corresponding number:
    - 1. Add items
    - 2. Export items
+   - 3. Exit
 
 3. If exporting, the HTML report (`product_list.html`) will be generated in the current directory.
 
@@ -119,44 +123,74 @@ python main.py
 To add support for a new website, follow these steps:
 
 1. Open `utils/websites.py`.
-2. Define a new function to scrape product information from the new website. This function should accept `url`, `soup`, `base_currency`, and `target_currency` as parameters.
+2. Define a new function to scrape product information from the new website. This function should accept `url`, `soup`, `base_currency`, `target_currencies`, and `enable_conversion` as parameters.
 3. Parse the product information (name, price, image URL) within the new function.
 4. Add the new function to the `determine_website_and_get_info` function in `utils/parser.py`.
 
-### Example
+### Example using CSS Selectors
 
 ```python
-def get_newwebsite_product_info(url, soup, base_currency, target_currency):
-    # Parse the product name, price, and image URL from the new website's page structure
-    name_tag = soup.find('div', {'class': 'product-name'})
-    price_tag = soup.find('span', {'class': 'price'})
-    img_tag = soup.find('img', {'class': 'product-image'})
-    
-    if not name_tag or not price_tag or not img_tag:
-        print("Failed to retrieve product information from NewWebsite.")
+def get_newwebsite_product_info(url, soup, base_currency, target_currencies, enable_conversion):
+    name_selector = 'div.product-name'
+    price_selector = 'span.price'
+    img_selector = 'img.product-image'
+
+    return get_product_info(
+        url, 
+        soup, 
+        name_selector,
+        price_selector,
+        img_selector,
+        base_currency, 
+        target_currencies, 
+        enable_conversion
+    )
+```
+
+### Example using XPath
+
+```python
+def get_newwebsite_product_info_xpath(url, soup, base_currency, target_currencies, enable_conversion):
+    name_xpath = '//div[@class="product-name"]'
+    price_xpath = '//span[@class="price"]'
+    img_xpath = '//img[@class="product-image"]'
+
+    return get_product_info_xpath(
+        url,
+        soup,
+        name_xpath,
+        price_xpath,
+        img_xpath,
+        base_currency,
+        target_currencies,
+        enable_conversion
+    )
+```
+
+### Updating the Parser
+
+In `utils/parser.py`, update the `determine_website_and_get_info` function to include the new website:
+
+```python
+from utils.websites import get_ikea_product_info, get_elgiganten_product_info, get_trademax_product_info, get_newwebsite_product_info
+
+def determine_website_and_get_info(url, base_currency, target_currencies, enable_conversion):
+    content = fetch_product_page(url)
+    if not content:
         return None
     
-    name = name_tag.text.strip()
-    original_price = parse_price(price_tag.text.strip())
-    if original_price is None:
-        print("Failed to parse the price for NewWebsite product.")
+    soup = BeautifulSoup(content, 'html.parser')
+    if 'ikea.com' in url:
+        return get_ikea_product_info(url, soup, base_currency, target_currencies, enable_conversion)
+    elif 'elgiganten.se' in url:
+        return get_elgiganten_product_info(url, soup, base_currency, target_currencies, enable_conversion)
+    elif 'trademax.se' in url:
+        return get_trademax_product_info(url, soup, base_currency, target_currencies, enable_conversion)
+    elif 'newwebsite.com' in url:
+        return get_newwebsite_product_info(url, soup, base_currency, target_currencies, enable_conversion)
+    else:
+        print("Unsupported website")
         return None
-
-    exchange_rate = get_exchange_rate(base_currency, target_currency)
-    if exchange_rate is None:
-        print("Failed to retrieve exchange rate for NewWebsite product.")
-        return None
-
-    exchange_price = original_price * exchange_rate
-    picture_url = img_tag['src']
-
-    return {
-        'url': url,
-        'name': name,
-        'original_price': f"{original_price:.2f} {base_currency}",
-        'exchange_price': f"{exchange_price:.2f} {target_currency}",
-        'picture_url': picture_url
-    }
 ```
 
 ## Warning
