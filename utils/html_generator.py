@@ -1,30 +1,6 @@
-import json
 from jinja2 import Template
 
-def load_data(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
-    return data
-
-def calculate_totals(data):
-    totals = {}
-    overall_sek_total = 0
-    overall_gbp_total = 0
-    for category, items in data.items():
-        sek_total = 0
-        gbp_total = 0
-        for item in items.values():
-            sek_price = float(item['sek_price'].split()[0])
-            gbp_price = float(item['gbp_price'].split()[0])
-            sek_total += sek_price
-            gbp_total += gbp_price
-        totals[category] = {'sek_total': sek_total, 'gbp_total': gbp_total}
-        overall_sek_total += sek_total
-        overall_gbp_total += gbp_total
-    totals['overall'] = {'sek_total': overall_sek_total, 'gbp_total': overall_gbp_total}
-    return totals
-
-def generate_html(data, totals):
+def generate_html(data, totals, base_currency, target_currency):
     html_template = """
     <!DOCTYPE html>
     <html lang="sv">
@@ -43,7 +19,6 @@ def generate_html(data, totals):
             .item { flex: 1 1 45%; margin: 10px; padding: 10px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.05); background: #f0f0f0; word-wrap: break-word; }
             .item:nth-of-type(odd) { background: #fafafa; }
             .item img { width: 100px; height: 100px; margin-right: 15px; border-radius: 5px; object-fit: cover; }
-            .item-details { }
             .item-details div { margin-bottom: 5px; }
 
             @media (max-width: 600px) {
@@ -56,22 +31,22 @@ def generate_html(data, totals):
     <body>
         <div class="container">
             <div class="overall-total">
-                <div>Total SEK: {{ "%.2f" % totals.overall.sek_total }}</div>
-                <div>Total GBP: {{ "%.2f" % totals.overall.gbp_total }}</div>
+                <div>Total {{ base_currency }}: {{ "%.2f" % totals.overall.original_total }}</div>
+                <div>Total {{ target_currency }}: {{ "%.2f" % totals.overall.exchange_total }}</div>
             </div>
             {% for category, items in data.items() %}
             {% if items %}
             <div class="category">
                 <h2>{{ category }}</h2>
-                <div class="category-total">Total SEK: {{ "%.2f" % totals[category].sek_total }} | Total GBP: {{ "%.2f" % totals[category].gbp_total }}</div>
+                <div class="category-total">Total {{ base_currency }}: {{ "%.2f" % totals[category].original_total }} | Total {{ target_currency }}: {{ "%.2f" % totals[category].exchange_total }}</div>
                 <div class="items">
                     {% for item in items.values() %}
                     <div class="item">
                         <img src="{{ item.picture_url }}" alt="{{ item.name }}" loading="lazy">
                         <div class="item-details">
                             <div><strong>{{ item.name }}</strong></div>
-                            <div>SEK Price: {{ item.sek_price }}</div>
-                            <div>GBP Price: {{ item.gbp_price }}</div>
+                            <div>{{ base_currency }} Price: {{ item.original_price }}</div>
+                            <div>{{ target_currency }} Price: {{ item.exchange_price }}</div>
                             <div><a href="{{ item.url }}" target="_blank">Product Link</a></div>
                         </div>
                     </div>
@@ -86,22 +61,4 @@ def generate_html(data, totals):
     """
 
     template = Template(html_template)
-    return template.render(data=data, totals=totals)
-
-def save_html(html_content, file_path):
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.write(html_content)
-
-def main():
-    data_file = 'data.json'
-    output_file = 'product_list.html'
-    
-    data = load_data(data_file)
-    totals = calculate_totals(data)
-    html_content = generate_html(data, totals)
-    save_html(html_content, output_file)
-    
-    print(f"HTML file saved to {output_file}")
-
-if __name__ == "__main__":
-    main()
+    return template.render(data=data, totals=totals, base_currency=base_currency, target_currency=target_currency)

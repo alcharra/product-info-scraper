@@ -1,0 +1,8 @@
+{
+    "categories": ["Kitchen", "Living Room", "Bedroom", "Bathroom"],
+    "convertOriginalCurrency": {
+      "ExchangeFrom": "SEK",
+      "ExchangeTo": "GBP"
+    }
+  }
+  

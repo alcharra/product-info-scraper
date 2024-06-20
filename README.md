@@ -1,14 +1,15 @@
+
 # Product Info Scraper and Exporter
 
 ## Overview
 
-This project contains two scripts (`index.py` and `export.py`) that work together to scrape product information from specific e-commerce websites, save the details in a JSON file, and export the collected data into an HTML report. The supported websites are IKEA, Elgiganten, and Trademax.
+This project contains a script (`main.py`) that scrapes product information from specific e-commerce websites, saves the details in a JSON file, and exports the collected data into an HTML report. The supported websites are IKEA, Elgiganten, and Trademax.
 
 ### Features
 
-- **Scrape Product Information**: Extracts product details such as name, price (in SEK and GBP), and image URL.
-- **Save Data**: Stores the scraped data in a structured JSON file categorized by product types.
-- **Export Data**: Generates an HTML report summarizing the collected product information.
+- **Scrape Product Information**: Extracts product details such as name, price (in original and target currencies), and image URL.
+- **Save Data**: Stores the scraped data in a structured JSON file categorised by product types.
+- **Export Data**: Generates an HTML report summarising the collected product information.
 
 ## Supported Websites
 
@@ -26,6 +27,27 @@ pip install requests beautifulsoup4 lxml jinja2 python-dotenv
 ```
 
 - An API key from ExchangeRate-API to fetch the exchange rates.
+
+## Configuration
+
+### `config.json`
+
+Create a `config.json` file in the project directory with the following structure:
+
+```json
+{
+  "categories": ["Kitchen", "Living Room", "Bedroom", "Bathroom"],
+  "convertOriginalCurrency": {
+    "ExchangeFrom": "SEK",
+    "ExchangeTo": "GBP"
+  }
+}
+```
+
+- `categories`: List of product categories.
+- `convertOriginalCurrency`: Configuration for currency conversion.
+  - `ExchangeFrom`: The original currency code.
+  - `ExchangeTo`: The target currency code.
 
 ## How to Use
 
@@ -60,87 +82,83 @@ You can either add product information or export the collected data into an HTML
 
 #### Adding Product Information
 
-1. Run the `index.py` script:
+1. Run the `main.py` script:
 
-   ```bash
-   python index.py
-   ```
+```bash
+python main.py
+```
 
-2. When prompted, choose the action `add` to add new products.
-3. Enter the number corresponding to the category for the products:
+2. When prompted, choose the action by entering the corresponding number:
+   - 1. Add items
+   - 2. Export items
+
+3. If adding items, select the category by entering the corresponding number:
    - 1. Kitchen
    - 2. Living Room
    - 3. Bedroom
    - 4. Bathroom
-   - 5. Extra
+
 4. Enter the product URLs one by one. Type `exit` to stop adding products.
 
 #### Exporting Data
 
-1. Run the `index.py` script:
-
-   ```bash
-   python index.py
-   ```
-
-2. When prompted, choose the action `export` to generate the HTML report.
-
-The HTML report (`product_list.html`) will be generated in the current directory.
-
-## Script Details
-
-### `index.py`
-
-This script handles the user interaction, fetching, and parsing of product information from the supported websites.
-
-#### Functions
-
-- `test_webpage_content(soup)`: Saves the webpage content to `test.html` for testing purposes.
-- `get_exchange_rate(base_currency, target_currency)`: Fetches the exchange rate between two currencies.
-- `fetch_product_page(url, retries=3, delay=5)`: Fetches the product page content with retry logic.
-- `parse_price(price_str)`: Parses the price from a string to a float.
-- `get_ikea_product_info(url, soup)`: Extracts product information from an IKEA product page.
-- `get_elgiganten_product_info(url, soup)`: Extracts product information from an Elgiganten product page.
-- `get_trademax_product_info(url, soup)`: Extracts product information from a Trademax product page.
-- `save_product_info(product_info, category)`: Saves product information to the JSON file.
-- `determine_website_and_get_info(url)`: Determines the website and fetches product information accordingly.
-- `main()`: Main function to run the script.
-
-### `export.py`
-
-This script handles the loading of data from the JSON file, calculating totals, generating HTML, and saving the HTML report.
-
-#### Functions
-
-- `load_data(file_path)`: Loads data from a JSON file.
-- `calculate_totals(data)`: Calculates the total prices in SEK and GBP for each category and overall.
-- `generate_html(data, totals)`: Generates an HTML report from the data and totals.
-- `save_html(html_content, file_path)`: Saves the generated HTML content to a file.
-- `main()`: Main function to run the script independently if needed.
-
-## Example Usage
-
-### Adding Products
+1. Run the `main.py` script:
 
 ```bash
-$ python index.py
-Do you want to 'export' or 'add' items? add
-Please select the category:
-1. Kitchen
-2. Living Room
-3. Bedroom
-4. Bathroom
-5. Extra
-Enter the number corresponding to the category: 1
-Please enter the product URL (or type 'exit' to stop): https://www.ikea.com/se/sv/p/product1
-Product information saved to Kitchen category in data.json
-Please enter the product URL (or type 'exit' to stop): exit
+python main.py
 ```
 
-### Exporting Data
+2. When prompted, choose the action by entering the corresponding number:
+   - 1. Add items
+   - 2. Export items
 
-```bash
-$ python index.py
-Do you want to 'export' or 'add' items? export
-HTML report generated successfully.
+3. If exporting, the HTML report (`product_list.html`) will be generated in the current directory.
+
+## Adding Support for a New Website
+
+To add support for a new website, follow these steps:
+
+1. Open `utils/websites.py`.
+2. Define a new function to scrape product information from the new website. This function should accept `url`, `soup`, `base_currency`, and `target_currency` as parameters.
+3. Parse the product information (name, price, image URL) within the new function.
+4. Add the new function to the `determine_website_and_get_info` function in `utils/parser.py`.
+
+### Example
+
+```python
+def get_newwebsite_product_info(url, soup, base_currency, target_currency):
+    # Parse the product name, price, and image URL from the new website's page structure
+    name_tag = soup.find('div', {'class': 'product-name'})
+    price_tag = soup.find('span', {'class': 'price'})
+    img_tag = soup.find('img', {'class': 'product-image'})
+    
+    if not name_tag or not price_tag or not img_tag:
+        print("Failed to retrieve product information from NewWebsite.")
+        return None
+    
+    name = name_tag.text.strip()
+    original_price = parse_price(price_tag.text.strip())
+    if original_price is None:
+        print("Failed to parse the price for NewWebsite product.")
+        return None
+
+    exchange_rate = get_exchange_rate(base_currency, target_currency)
+    if exchange_rate is None:
+        print("Failed to retrieve exchange rate for NewWebsite product.")
+        return None
+
+    exchange_price = original_price * exchange_rate
+    picture_url = img_tag['src']
+
+    return {
+        'url': url,
+        'name': name,
+        'original_price': f"{original_price:.2f} {base_currency}",
+        'exchange_price': f"{exchange_price:.2f} {target_currency}",
+        'picture_url': picture_url
+    }
 ```
+
+## Warning
+
+Please make sure to only scrape websites that allow it. Web scraping can be illegal and violate the terms of service of some websites.
