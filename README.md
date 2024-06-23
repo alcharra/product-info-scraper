@@ -21,9 +21,9 @@ This project contains a script (`main.py`) that scrapes product information from
 - Python 3.x
 - Required Python packages (can be installed using `pip`):
 
-```bash
+``` 
 pip install requests beautifulsoup4 lxml jinja2 python-dotenv
-```
+``` 
 
 - An API key from ExchangeRate-API to fetch the exchange rates.
 
@@ -33,7 +33,7 @@ pip install requests beautifulsoup4 lxml jinja2 python-dotenv
 
 Create a `config.json` file in the project directory with the following structure:
 
-```json
+``` json
 {
   "categories": ["Kitchen", "Living Room", "Bedroom", "Bathroom"],
   "convertOriginalCurrency": {
@@ -56,43 +56,44 @@ Create a `config.json` file in the project directory with the following structur
 
 Clone the repository to your local machine using the following command:
 
-```bash
+``` 
 git clone <repository_url>
 cd <repository_folder>
-```
+``` 
 
 ### 2. Set Up the Environment
 
 Install the required Python packages:
 
-```bash
+``` 
 pip install -r requirements.txt
-```
+``` 
 
 ### 3. Add Your API Key
 
 Obtain your API key from ExchangeRate-API and create a `.env` file in the project directory with the following content:
 
-```
+``` 
 EXCHANGE_RATE_API_KEY=your_api_key_here
-```
+``` 
 
 ### 4. Run the Script
 
-You can either add product information or export the collected data into an HTML file.
+You can either add product information, export the collected data into an HTML file, or rescan existing data.
 
 #### Adding Product Information
 
 1. Run the `main.py` script:
 
-```bash
+``` 
 python main.py
-```
+``` 
 
 2. When prompted, choose the action by entering the corresponding number:
    - 1. Add items
    - 2. Export items
-   - 3. Exit
+   - 3. Rescan items
+   - 4. Exit
 
 3. If adding items, select the category by entering the corresponding number:
    - 1. Kitchen
@@ -107,16 +108,33 @@ python main.py
 
 1. Run the `main.py` script:
 
-```bash
+``` 
 python main.py
-```
+``` 
 
 2. When prompted, choose the action by entering the corresponding number:
    - 1. Add items
    - 2. Export items
-   - 3. Exit
+   - 3. Rescan items
+   - 4. Exit
 
 3. If exporting, the HTML report (`product_list.html`) will be generated in the current directory.
+
+#### Rescanning Data
+
+1. Run the `main.py` script:
+
+``` 
+python main.py
+``` 
+
+2. When prompted, choose the action by entering the corresponding number:
+   - 1. Add items
+   - 2. Export items
+   - 3. Rescan items
+   - 4. Exit
+
+3. If rescanning, the script will check for any price changes in the existing data and update the `data.json` file if there are any changes.
 
 ## Adding Support for a New Website
 
@@ -129,7 +147,7 @@ To add support for a new website, follow these steps:
 
 ### Example using CSS Selectors
 
-```python
+``` 
 def get_newwebsite_product_info(url, soup, base_currency, target_currencies, enable_conversion):
     name_selector = 'div.product-name'
     price_selector = 'span.price'
@@ -145,11 +163,11 @@ def get_newwebsite_product_info(url, soup, base_currency, target_currencies, ena
         target_currencies, 
         enable_conversion
     )
-```
+``` 
 
 ### Example using XPath
 
-```python
+``` 
 def get_newwebsite_product_info_xpath(url, soup, base_currency, target_currencies, enable_conversion):
     name_xpath = '//div[@class="product-name"]'
     price_xpath = '//span[@class="price"]'
@@ -165,13 +183,13 @@ def get_newwebsite_product_info_xpath(url, soup, base_currency, target_currencie
         target_currencies,
         enable_conversion
     )
-```
+``` 
 
 ### Updating the Parser
 
 In `utils/parser.py`, update the `determine_website_and_get_info` function to include the new website:
 
-```python
+``` 
 from utils.websites import get_ikea_product_info, get_elgiganten_product_info, get_trademax_product_info, get_newwebsite_product_info
 
 def determine_website_and_get_info(url, base_currency, target_currencies, enable_conversion):
@@ -191,7 +209,7 @@ def determine_website_and_get_info(url, base_currency, target_currencies, enable
     else:
         print("Unsupported website")
         return None
-```
+``` 
 
 ## Warning
 

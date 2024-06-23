@@ -2,7 +2,7 @@ import json
 from dotenv import load_dotenv
 from utils.parser import determine_website_and_get_info
 from utils.html_generator import generate_html
-from utils.helpers import load_data, save_html, save_product_info, calculate_totals
+from utils.helpers import load_data, save_html, save_product_info, calculate_totals, rescan_prices
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ def main():
         print(f"Error decoding config.json: {e}")
         return
 
-    actions = ["Add items", "Export items", "Exit"]
+    actions = ["Add items", "Export items", "Rescan Prices", "Exit"]
     
     while True:
         print("Please select an action:")
@@ -81,10 +81,22 @@ def main():
             html_content = generate_html(data, totals, base_currency, target_currencies)
             save_html(html_content, 'product_list.html')
             print("HTML report generated successfully.")
+        elif action == 'rescan':
+            data = load_data('./db/data.json')
+            if not data:
+                print("No data to rescan.")
+                continue
+            updated_data = rescan_prices(data, base_currency, target_currencies, enable_conversion, determine_website_and_get_info)
+            if updated_data:
+                with open('./db/data.json', 'w', encoding='utf-8') as file:
+                    json.dump(updated_data, file, ensure_ascii=False, indent=4)
+                print("Prices rescanned and data.json updated successfully.")
+            else:
+                print("No price changes detected during rescan.")
         elif action == 'exit':
             break
         else:
-            print("Invalid action. Please choose 'export', 'add', or 'exit'.")
+            print("Invalid action. Please choose 'export', 'add', 'rescan', or 'exit'.")
 
 if __name__ == "__main__":
     main()

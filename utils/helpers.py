@@ -209,3 +209,19 @@ def calculate_totals(data):
 
     totals['overall'] = {'original_total': overall_original_total, 'exchange_totals': overall_exchange_totals}
     return totals
+
+def rescan_prices(data, base_currency, target_currencies, enable_conversion, determine_website_and_get_info):
+    updated_data = data.copy()
+    changes = False
+    for category, items in data.items():
+        for item_id, item in items.items():
+            url = item['url']
+            try:
+                new_product_info = determine_website_and_get_info(url, base_currency, target_currencies, enable_conversion)
+                if new_product_info and new_product_info['original_price'] != item['original_price']:
+                    updated_data[category][item_id] = new_product_info
+                    changes = True
+                    print(f"Updated price for {item['name']} from {item['original_price']} to {new_product_info['original_price']}")
+            except Exception as e:
+                print(f"Failed to rescan product {item['name']} from {url}. Error: {e}")
+    return updated_data if changes else None
