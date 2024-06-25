@@ -1,9 +1,20 @@
 from jinja2 import Template
 import datetime
+from utils.helpers import get_exchange_prices
 
-def generate_html(data, totals, base_currency, target_currencies):
+def generate_html(data, totals, base_currency, enable_conversion, target_currencies):
     timestamp = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     
+    exchange_rate_cache = {}
+
+    def get_cached_exchange_prices(price, base_currency, target_currencies, enable_conversion):
+        if not enable_conversion:
+            return {}
+        cache_key = f"{price}_{base_currency}_{target_currencies}"
+        if cache_key not in exchange_rate_cache:
+            exchange_rate_cache[cache_key] = get_exchange_prices(price, base_currency, target_currencies, enable_conversion)
+        return exchange_rate_cache[cache_key]
+
     html_template = """
     <!DOCTYPE html>
     <html lang="en">
@@ -24,6 +35,7 @@ def generate_html(data, totals, base_currency, target_currencies):
             .item:nth-of-type(odd) { background: #fafafa; }
             .item img { width: 100px; height: 100px; margin-right: 15px; border-radius: 5px; object-fit: cover; }
             .item-details div { margin-bottom: 5px; }
+            .item-count { font-weight: bold; color: #333; }
 
             @media (max-width: 600px) {
                 .item { flex: 1 1 100%; }
@@ -39,7 +51,8 @@ def generate_html(data, totals, base_currency, target_currencies):
             </div>
             <div class="overall-total">
                 <div>Total {{ base_currency }}: {{ "%.2f" % totals['overall']['original_total'] }}</div>
-                {% for currency, total in totals['overall']['exchange_totals'].items() %}
+                {% set overall_exchange_totals = get_cached_exchange_prices(totals['overall']['original_total'], base_currency, target_currencies, enable_conversion) %}
+                {% for currency, total in overall_exchange_totals.items() %}
                     <div>Total {{ currency }}: {{ "%.2f" % total }}</div>
                 {% endfor %}
             </div>
@@ -48,23 +61,40 @@ def generate_html(data, totals, base_currency, target_currencies):
             <div class="category">
                 <h2>{{ category }}</h2>
                 <div class="category-total">Total {{ base_currency }}: {{ "%.2f" % totals[category]['original_total'] }}
-                {% for currency, total in totals[category]['exchange_totals'].items() %}
+                {% set category_exchange_totals = get_cached_exchange_prices(totals[category]['original_total'], base_currency, target_currencies, enable_conversion) %}
+                {% for currency, total in category_exchange_totals.items() %}
                     | Total {{ currency }}: {{ "%.2f" % total }}
                 {% endfor %}
                 </div>
                 <div class="items">
+                    {% set grouped_items = {} %}
                     {% for item in items.values() %}
+                        {% if item.name in grouped_items %}
+                            {% set grouped_items = grouped_items.update({item.name: grouped_items[item.name] + [item]}) %}
+                        {% else %}
+                            {% set grouped_items = grouped_items.update({item.name: [item]}) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% for item_name, item_list in grouped_items.items() %}
+                    {% set item_count = item_list | count %}
+                    {% set first_item = item_list[0] %}
                     <div class="item">
-                        <img src="{{ item.picture_url }}" alt="{{ item.name }}" loading="lazy">
+                        <img src="{{ first_item.picture_url }}" alt="{{ item_name }}" loading="lazy">
                         <div class="item-details">
-                            <div><strong>{{ item.name }}</strong></div>
-                            <div>{{ base_currency }} Price: {{ item.original_price }}</div>
-                            {% for currency in target_currencies %}
-                                {% if item.get('exchange_price_' ~ currency) %}
-                                    <div>{{ currency }} Price: {{ item['exchange_price_' ~ currency] }}</div>
+                            <div><strong>{{ item_name }}</strong></div>
+                            <div>{{ base_currency }} Price: {{ first_item.price }}</div>
+                            <div class="item-count">Quantity: {{ item_count }}</div>
+                            {% if item_count > 1 %}
+                            <div class="item-total-price">{{ base_currency }} Total Price: {{ "%.2f" % (first_item.price.split()[0]|float * item_count) }}</div>
+                            {% endif %}
+                            {% set exchange_prices = get_cached_exchange_prices(first_item.price.split()[0]|float, base_currency, target_currencies, enable_conversion) %}
+                            {% for currency, price in exchange_prices.items() %}
+                                <div>{{ currency }} Price: {{ "%.2f" % price }}</div>
+                                {% if item_count > 1 %}
+                                <div class="item-total-price">{{ currency }} Total Price: {{ "%.2f" % (price * item_count) }}</div>
                                 {% endif %}
                             {% endfor %}
-                            <div><a href="{{ item.url }}" target="_blank">Product Link</a></div>
+                            <div><a href="{{ first_item.url }}" target="_blank">Product Link</a></div>
                         </div>
                     </div>
                     {% endfor %}
@@ -78,4 +108,12 @@ def generate_html(data, totals, base_currency, target_currencies):
     """
 
     template = Template(html_template)
-    return template.render(data=data, totals=totals, base_currency=base_currency, target_currencies=target_currencies, timestamp=timestamp)
+    return template.render(
+        data=data, 
+        totals=totals, 
+        base_currency=base_currency, 
+        target_currencies=target_currencies, 
+        enable_conversion=enable_conversion,
+        timestamp=timestamp, 
+        get_cached_exchange_prices=get_cached_exchange_prices
+    )

@@ -9,5 +9,6 @@
     "enableConversion": true,
     "ExchangeFrom": "SEK",
     "ExchangeTo": ["GBP", "USD", "JPY"]
-  }
+  },
+  "enableAutoScan" : true
 }
