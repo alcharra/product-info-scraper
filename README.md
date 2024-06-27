@@ -27,6 +27,12 @@ This project contains a script (`main.py`) that scrapes product information from
 pip install requests beautifulsoup4 lxml jinja2 python-dotenv tqdm
 ```
 
+Alternatively, you can install all required packages using the `requirements.txt` file with:
+
+```bash
+pip install -r requirements.txt
+```
+
 - An API key from ExchangeRate-API to fetch the exchange rates.
 
 ## Configuration
@@ -65,23 +71,15 @@ git clone <repository_url>
 cd <repository_folder>
 ```
 
-### 2. Set Up the Environment
+### 2. Add Your API Key
 
-Install the required Python packages:
+Obtain your API key from ExchangeRate-API and add it to the `.env` file in the project directory:
 
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Add Your API Key
-
-Obtain your API key from ExchangeRate-API and create a `.env` file in the project directory with the following content:
-
-```bash
+```text
 EXCHANGE_RATE_API_KEY=your_api_key_here
 ```
 
-### 4. Run the Script
+### 3. Run the Script
 
 You can either add product information, export the collected data into an HTML file, or rescan existing data.
 

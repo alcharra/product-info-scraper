@@ -1,41 +1,12 @@
 import json
 from dotenv import load_dotenv
 from utils.parser import determine_website_and_get_info
-from utils.html_generator import generate_html
-from utils.helpers import load_data, save_html, save_product_info, calculate_totals, rescan_prices
+from utils.generator.html import generate_html
+from utils.helpers import load_data, load_config, perform_rescan
+from utils.product.helpers import save_product_info
+from utils.generator.helpers import save_html, calculate_totals
 
 load_dotenv()
-
-def load_config():
-    try:
-        with open('config.json', 'r', encoding='utf-8') as config_file:
-            config = json.load(config_file)
-            categories = config.get("categories", [])
-            base_currency = config["convertOriginalCurrency"]["ExchangeFrom"]
-            target_currencies = config["convertOriginalCurrency"]["ExchangeTo"]
-            enable_conversion = config["convertOriginalCurrency"].get("enableConversion", True)
-            enable_auto_scan = config.get("enableAutoScan", False)
-            return categories, base_currency, target_currencies, enable_conversion, enable_auto_scan
-    except FileNotFoundError:
-        print("config.json file not found.")
-        return None, None, None, None, None
-    except json.JSONDecodeError as e:
-        print(f"Error decoding config.json: {e}")
-        return None, None, None, None, None
-
-def perform_rescan():
-    data = load_data('./db/data.json')
-    if not data:
-        print("No data to rescan.")
-        return
-    print("Rescanning prices...")
-    updated_data = rescan_prices(data, determine_website_and_get_info)
-    if updated_data:
-        with open('./db/data.json', 'w', encoding='utf-8') as file:
-            json.dump(updated_data, file, ensure_ascii=False, indent=4)
-        print("Prices rescanned and data.json updated successfully.")
-    else:
-        print("No price changes detected during rescan.")
 
 def main():
     categories, base_currency, target_currencies, enable_conversion, enable_auto_scan = load_config()
@@ -43,7 +14,7 @@ def main():
         return
 
     if enable_auto_scan:
-        perform_rescan()
+        perform_rescan(determine_website_and_get_info)
 
     actions = ["Add items", "Export items", "Rescan Prices", "Exit"]
 
@@ -106,7 +77,7 @@ def main():
             save_html(html_content, 'product_list.html')
             print("HTML report generated successfully.")
         elif action == 'rescan':
-            perform_rescan()
+            perform_rescan(determine_website_and_get_info)
         elif action == 'exit':
             break
         else:

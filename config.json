@@ -8,7 +8,11 @@
   "convertOriginalCurrency": {
     "enableConversion": true,
     "ExchangeFrom": "SEK",
-    "ExchangeTo": ["GBP", "USD", "JPY"]
+    "ExchangeTo": [
+      "GBP", 
+      "USD", 
+      "JPY"
+    ]
   },
   "enableAutoScan" : true
 }

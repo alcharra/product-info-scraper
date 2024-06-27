@@ -1,4 +1,4 @@
-from utils.helpers import get_product_info, get_product_info_xpath
+from utils.product.parser import get_product_info, get_product_info_xpath
 
 def get_ikea_product_info(url, soup):
     name_selector = 'span.pip-header-section__description-text'

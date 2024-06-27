@@ -1,6 +1,6 @@
 from jinja2 import Template
 import datetime
-from utils.helpers import get_exchange_prices
+from utils.generator.helpers import get_exchange_prices
 
 def generate_html(data, totals, base_currency, enable_conversion, target_currencies):
     timestamp = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
